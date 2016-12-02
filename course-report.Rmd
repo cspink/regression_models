@@ -1,0 +1,130 @@
+---
+title: "Course project - Regression.  Analysis of transmission effects on mileage."
+author: "Lars Bungum"
+date: "2 oktober 2016"
+output: pdf_document
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Executive summary
+
+This report has explored the mtcars dataset to assess the effect of transmission types on mileage.  Treating the variable as a binary factor with weight as an independent coefficient that correlates a lot with many other factors, shows that there is a different relationship in the two groups.  For manual cars, the effect of reduced weight on mileage is much more profound.
+
+Hence, we can conclude that reducing the weight of the vehicle is very important if you opt for a manual drive, if high mileage is your objective, for the sake of the environment, say.  For automatic cars the effect is not as big, and there might be other factors to look for when choosing an environmentally friendly car, such as materials, production facilities, etc.
+
+## Report structure
+
+This report is intended to analyze the mtcars dataset in order to investigate the influence on automatic and manual gears ("am") on the mileage per gallon (MPG).
+
+The report will begin with some exploratory data analysis, in order to select the best model to explain the dataset.  It continues with some analysis, and ends with a summary.  Finally, some plots are provided in the appendix.
+
+All figures and tables are found in the Appendix, at the end of the document.
+
+## Exploratory data analysis
+
+### Statistics on the dataset
+
+Table 1 lists 11 variables, of which mpg is to be treated as the dependent one.  Some of them may be interpreted as categorical, notably the "am", signalling automatic/manual transmission, the amount of cylinders, the number of gears (3,4 or 5) and the number and possibly the amount of carburators. 
+
+
+### Fitting a model based on only am, and all variables
+
+```{r, include=TRUE}
+fitam <- lm(mpg ~ am , data=mtcars)
+fitall <- lm(mpg ~. , data=mtcars)
+```
+
+Table 2 summarizes the coefficients of this model.  It shows that the number of variables introduce so high variance, that there is no statistically significant linear relationship between any coefficient when including all variables.  Hence, a better model to fit the data is necessrary.
+
+### Analyzing the variance inflation factors and correlation between the coefficients.
+
+Looking at the square root of the inflation factors (getting it measured in effect on the standard deviation), suggests that there is a significant correlation between some of these coefficient.
+
+```{r, include=TRUE}
+library(car)
+sqrt(vif(fitall))
+```
+
+### Choosing an appropriate model
+
+Because of correlation between coefficients, we retain wt, qsec and cyl and compare it with a model without cyl.
+
+```{r, include=TRUE}
+fitaqc <- lm(mpg ~ factor(am)+qsec+cyl , data = mtcars) 
+fit <- lm(mpg ~ factor(am)+wt+qsec , data = mtcars)
+```
+
+Figures 1 and 2 show residual plots of the two models.  There seems to be a certain pattern in the residuals of the model with am+qsec+cyl (spread among high and low values), and wt is reintroduced to the model.
+
+Table 3 summarizes the model.  It can be seen that the R-squared value explains 80% of the variation, similar to the model using all the factors.
+
+### Anova comparison of the candidate models 
+
+Table 4  models fitam, fitall and fit with anova suggests that there is no statistically significant difference between the two last models, and hence that the parsimonious one of them is just as good.  However, introducing the regressors disp and cyl does have a significant effect.
+
+## Statistical analysis of the influence of transmission type
+
+Both for the models fitall and fit, there is a positive relationship between the transmission type (am) and mpg. When looking for confounding factors, the relationship is not reversed, but changed in magnitude.  For the final model of choice.  The summaries of all the above models, there is a clear positive relationship between manual transmission (am=1) and mpg albeit at different significance levels.
+
+### Training a simple model with a binary variable separating data points
+
+We know that mpg is negatively related to the weight of the vehicle.
+Figure 2 plots the deta points with a color that signals whether or not it is using manual (dark blue) or automatic (light blue) transmission.
+
+By training another linear model that treats mpg as a dependent variable and wt as the independent, the asterisk * "multiplies" this regression by calculating the slopes for the manual and automatic transmission groups, respectively.
+
+```{r, include=TRUE}
+fitmult <- lm(mpg ~ wt*factor(am)  , data = mtcars)
+```
+
+Table 5 summarizes the models.  It provides two slopes, both for the group with automatic and for manual transmission. Plotting the two regression lines illustrates how the relation between weight and mpg differs between the two groups.
+
+Figure 2 furthermore shows that the mpg is reduced when the weight of the vehicle at a significantly different pace between the groups.  For the manual cars, the mpg goes down a lot faster as the weight goes up, while for the automatically transmitted cars, the mpg is not reduced as quickly as the weight increases.
+
+The summary of the fitmult model shows that all the coefficients are statistically significant, including the relation between the weight and the factor.  The effect of reducing weight on mileage is clearly different between the two groups of transmission systems.  This makes sense, as manual gears gives the driver the opportunity to adjust driving style to conditions, which is likely to result in more fuel efficient than the algorithms available in the 1970s would provide.  With recent technology I am not so sure!
+
+
+
+## Appendix
+
+### Table 1
+```{r, include=TRUE}
+names(mtcars)
+```
+### Table 2
+```{r, include=TRUE}
+summary(fitall)$coef
+```
+
+### Table 3
+```{r, include=TRUE}
+summary(fit)$coef
+```
+
+### Table 4
+```{r, include=TRUE}
+anova(fitam, fitall, fit)
+```
+
+### Table 5
+```{r, include=TRUE}
+summary(fitmult)$coef
+```
+
+### Figure 1
+```{r, include=TRUE, echo=FALSE}
+par(mfrow=c(1,2))
+plot(predict(fitaqc), resid(fitaqc), pch = 23, main="am+qsec+cyl")
+plot(predict(fit), resid(fit), pch = 23, main="am+wt+qsec")
+```
+
+### Figure 2
+```{r, include=TRUE, echo=FALSE}
+library(ggplot2)
+g1 = g
+g1 = g1 + geom_abline(intercept=coef(fitmult)[1], slope = coef(fitmult)[2], size=1, color="dark blue")
+g1 = g1 +  geom_abline(intercept=coef(fitmult)[1]+coef(fitmult)[3], slope = coef(fitmult)[2]+coef(fitmult)[4], size=1, color="cyan") 
+g1
+```
