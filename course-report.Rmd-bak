@@ -1,7 +1,7 @@
 ---
 title: "Course project - Regression.  Analysis of transmission effects on mileage."
 author: "Lars Bungum"
-date: "8 January 2017"
+date: "2 oktober 2016"
 output: pdf_document
 ---
 
@@ -123,7 +123,7 @@ plot(predict(fit), resid(fit), pch = 23, main="am+wt+qsec")
 ### Figure 2
 ```{r, include=TRUE, echo=FALSE}
 library(ggplot2)
-g1 = ggplot(data = mtcars, aes(x=wt, y=mpg, color=am) ) + geom_point()
+g1 = g
 g1 = g1 + geom_abline(intercept=coef(fitmult)[1], slope = coef(fitmult)[2], size=1, color="dark blue")
 g1 = g1 +  geom_abline(intercept=coef(fitmult)[1]+coef(fitmult)[3], slope = coef(fitmult)[2]+coef(fitmult)[4], size=1, color="cyan") 
 g1
